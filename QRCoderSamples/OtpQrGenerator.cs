@@ -1,3 +1,5 @@
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.Text;
 using QRCoder;
 
@@ -19,6 +21,9 @@ public enum QrImageFormat
 
     /// <summary>PDF document containing the QR code.</summary>
     Pdf,
+
+    /// <summary>JPEG raster image. Windows-only (uses System.Drawing/GDI+).</summary>
+    Jpeg,
 }
 
 /// <summary>
@@ -117,8 +122,20 @@ public static class OtpQrGenerator
             QrImageFormat.Pdf => new PdfByteQRCode(qrData).GetGraphic(pixelsPerModule),
             // SvgQRCode returns a string; encode it as UTF-8 bytes so the API stays uniform.
             QrImageFormat.Svg => Encoding.UTF8.GetBytes(new SvgQRCode(qrData).GetGraphic(pixelsPerModule)),
+            QrImageFormat.Jpeg => RenderJpeg(qrData, pixelsPerModule),
             _ => throw new ArgumentOutOfRangeException(nameof(format), format, "Unsupported image format."),
         };
+    }
+
+    // JPEG isn't a native QRCoder byte renderer: render to a System.Drawing Bitmap
+    // (via the QRCode class) and encode it as JPEG. Windows-only, as GDI+ requires it.
+    private static byte[] RenderJpeg(QRCodeData qrData, int pixelsPerModule)
+    {
+        using var qrCode = new QRCode(qrData);
+        using var bmp = qrCode.GetGraphic(pixelsPerModule);
+        using var ms = new MemoryStream();
+        bmp.Save(ms, ImageFormat.Jpeg);
+        return ms.ToArray();
     }
 
     /// <summary>
@@ -131,6 +148,7 @@ public static class OtpQrGenerator
         QrImageFormat.Svg => ".svg",
         QrImageFormat.Bmp => ".bmp",
         QrImageFormat.Pdf => ".pdf",
+        QrImageFormat.Jpeg => ".jpg",
         _ => throw new ArgumentOutOfRangeException(nameof(format), format, "Unsupported image format."),
     };
 }

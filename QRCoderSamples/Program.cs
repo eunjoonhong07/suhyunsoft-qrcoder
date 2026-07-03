@@ -40,6 +40,8 @@ var formats = new (QrImageFormat Format, Func<byte[], bool> LooksValid)[]
     (QrImageFormat.Pdf, b => b.Take(4).SequenceEqual(new byte[] { (byte)'%', (byte)'P', (byte)'D', (byte)'F' })),
     // SVG: XML text containing an <svg tag.
     (QrImageFormat.Svg, b => System.Text.Encoding.UTF8.GetString(b).Contains("<svg")),
+    // JPEG: starts with FF D8 FF.
+    (QrImageFormat.Jpeg, b => b.Length > 3 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF),
 };
 
 string outDir = AppContext.BaseDirectory;
