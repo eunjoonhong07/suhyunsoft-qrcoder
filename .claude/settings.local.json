@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(dotnet --version)",
+      "PowerShell($paths = @\\(\"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\",\"C:\\\\Program Files \\(x86\\)\\\\dotnet\\\\dotnet.exe\"\\); foreach\\($p in $paths\\){ if\\(Test-Path $p\\){ \"FOUND: $p\"; & $p --version } }; Get-Command msbuild -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source; if\\(Test-Path \"C:\\\\Program Files\\\\Microsoft Visual Studio\"\\){ \"VS: \"; Get-ChildItem \"C:\\\\Program Files\\\\Microsoft Visual Studio\" -Directory | Select-Object -ExpandProperty Name })",
+      "PowerShell($paths = @\\(\"$env:ProgramFiles\\\\dotnet\\\\dotnet.exe\",\"${env:ProgramFiles\\(x86\\)}\\\\dotnet\\\\dotnet.exe\",\"$env:LocalAppData\\\\Microsoft\\\\dotnet\\\\dotnet.exe\"\\); foreach\\($p in $paths\\){ if\\(Test-Path $p\\){ \"FOUND: $p\"; & $p --version } })",
+      "PowerShell(& \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" run --project QRCoderSamples)",
+      "PowerShell(& \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" run --project QRCoderSamples -p:EnforceCodeStyleInBuild=false)",
+      "Bash(git rm *)"
+    ]
+  }
+}
