@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Text;
 using QRCoder;
@@ -135,6 +136,103 @@ public static class OtpQrGenerator
         using var bmp = qrCode.GetGraphic(pixelsPerModule);
         using var ms = new MemoryStream();
         bmp.Save(ms, ImageFormat.Jpeg);
+        return ms.ToArray();
+    }
+
+    /// <summary>
+    /// Combines up to four TOTP accounts into a single image, laid out as a 2x2 grid.
+    /// Windows-only (uses System.Drawing).
+    /// </summary>
+    /// <param name="accounts">1 to 4 accounts, each a (secret, issuer, label) tuple.</param>
+    /// <param name="format">Output image format. Raster only: Png (default), Jpeg, or Bmp.</param>
+    /// <param name="pixelsPerModule">Size of each QR module in pixels (default 10; smaller keeps the grid compact).</param>
+    /// <returns>Image bytes containing all the QR codes tiled together.</returns>
+    public static byte[] CreateTotpGrid(
+        IReadOnlyList<(string secret, string issuer, string label)> accounts,
+        QrImageFormat format = QrImageFormat.Png,
+        int pixelsPerModule = 10)
+    {
+        if (accounts is null || accounts.Count == 0)
+            throw new ArgumentException("Provide 1 to 4 accounts.", nameof(accounts));
+        if (accounts.Count > 4)
+            throw new ArgumentException("A 2x2 grid holds at most 4 accounts.", nameof(accounts));
+
+        using var generator = new QRCodeGenerator();
+        var tiles = new List<Bitmap>();
+        try
+        {
+            foreach (var (secret, issuer, label) in accounts)
+            {
+                var otp = new PayloadGenerator.OneTimePassword
+                {
+                    Type = PayloadGenerator.OneTimePassword.OneTimePasswordAuthType.TOTP,
+                    Secret = secret,
+                    Issuer = issuer,
+                    Label = label,
+                };
+                using var data = generator.CreateQrCode(otp.ToString(), QRCodeGenerator.ECCLevel.Q);
+                using var qr = new QRCode(data);
+                tiles.Add(qr.GetGraphic(pixelsPerModule));
+            }
+
+            using var composite = ComposeGrid(tiles, pixelsPerModule);
+            return EncodeBitmap(composite, format);
+        }
+        finally
+        {
+            foreach (var t in tiles)
+                t.Dispose();
+        }
+    }
+
+    // Lays the QR bitmaps out in a tight 2x2 grid on a white canvas, centering each tile in
+    // its cell. Mirrors the Bitmap/Graphics pattern in ArtQRCode.cs. Each QR already carries
+    // its own white quiet zone, so only a small gap is added between tiles.
+    private static Bitmap ComposeGrid(List<Bitmap> tiles, int pixelsPerModule)
+    {
+        const int cols = 2;
+        const int rows = 2;
+        int cellW = tiles.Max(t => t.Width);
+        int cellH = tiles.Max(t => t.Height);
+        int gap = Math.Max(4, pixelsPerModule / 2);
+
+        int totalW = (cols * cellW) + ((cols + 1) * gap);
+        int totalH = (rows * cellH) + ((rows + 1) * gap);
+
+        var composite = new Bitmap(totalW, totalH, PixelFormat.Format32bppArgb);
+        using var g = Graphics.FromImage(composite);
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.Clear(Color.White);
+
+        for (int i = 0; i < tiles.Count; i++)
+        {
+            int r = i / cols;
+            int c = i % cols;
+            int cellX = gap + (c * (cellW + gap));
+            int cellY = gap + (r * (cellH + gap));
+
+            // Center the QR within its cell (tiles can differ in size if payloads differ).
+            int qrX = cellX + ((cellW - tiles[i].Width) / 2);
+            int qrY = cellY + ((cellH - tiles[i].Height) / 2);
+            g.DrawImage(tiles[i], qrX, qrY, tiles[i].Width, tiles[i].Height);
+        }
+
+        return composite;
+    }
+
+    // Encodes an already-composed Bitmap to raster bytes. Grid output is Bitmap-based,
+    // so vector/document formats (Svg, Pdf) are not supported here.
+    private static byte[] EncodeBitmap(Bitmap bmp, QrImageFormat format)
+    {
+        var imageFormat = format switch
+        {
+            QrImageFormat.Png => ImageFormat.Png,
+            QrImageFormat.Jpeg => ImageFormat.Jpeg,
+            QrImageFormat.Bmp => ImageFormat.Bmp,
+            _ => throw new NotSupportedException($"Grid output supports raster formats (Png, Jpeg, Bmp) only, not {format}."),
+        };
+        using var ms = new MemoryStream();
+        bmp.Save(ms, imageFormat);
         return ms.ToArray();
     }
 

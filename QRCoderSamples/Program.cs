@@ -62,7 +62,25 @@ foreach (var (format, looksValid) in formats)
     Console.WriteLine($"  wrote {outPath}");
 }
 
-// 3. HOTP path in the default (PNG) format still works.
+// 3. Grid: four accounts combined into ONE image, in each raster format.
+var gridAccounts = new (string, string, string)[]
+{
+    ("JBSWY3DPEHPK3PXP", "MyApp", "alice@example.com"),
+    ("KRSXG5CTMVRXEZLU", "MyApp", "bob@example.com"),
+    ("MFRGGZDFMZTWQ2LK", "MyApp", "carol@example.com"),
+    ("NB2W45DFOIZAEBZW", "MyApp", "dave@example.com"),
+};
+// Grids are raster-only (Bitmap-based), so skip the vector/document formats.
+foreach (var (format, looksValid) in formats.Where(f => f.Format is QrImageFormat.Png or QrImageFormat.Jpeg or QrImageFormat.Bmp))
+{
+    byte[] grid = OtpQrGenerator.CreateTotpGrid(gridAccounts, format: format);
+    Check($"Grid ({format}) has a valid {format} header", looksValid(grid));
+    string gridPath = Path.Combine(outDir, "otp-grid" + OtpQrGenerator.FileExtension(format));
+    File.WriteAllBytes(gridPath, grid);
+    Console.WriteLine($"  wrote {gridPath} ({grid.Length} bytes)");
+}
+
+// 4. HOTP path in the default (PNG) format still works.
 byte[] hotp = OtpQrGenerator.CreateHotpQr(
     secret:  "JBSWY3DPEHPK3PXP",
     issuer:  "MyApp",
