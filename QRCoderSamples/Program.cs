@@ -21,7 +21,7 @@ var otp = new PayloadGenerator.OneTimePassword
 {
     Secret = "JBSWY3DPEHPK3PXP",
     Issuer = "MyApp",
-    Label  = "alice@example.com",
+    Label = "alice@example.com",
 };
 string payload = otp.ToString();
 Console.WriteLine($"  payload = {payload}");
@@ -51,7 +51,7 @@ foreach (var (format, looksValid) in formats)
     byte[] bytes = OtpQrGenerator.CreateTotpQr(
         secret: "JBSWY3DPEHPK3PXP",
         issuer: "MyApp",
-        label:  "alice@example.com",
+        label: "alice@example.com",
         format: format);
 
     Check($"{format} returns non-empty bytes", bytes.Length > 0);
@@ -82,9 +82,9 @@ foreach (var (format, looksValid) in formats.Where(f => f.Format is QrImageForma
 
 // 4. HOTP path in the default (PNG) format still works.
 byte[] hotp = OtpQrGenerator.CreateHotpQr(
-    secret:  "JBSWY3DPEHPK3PXP",
-    issuer:  "MyApp",
-    label:   "bob@example.com",
+    secret: "JBSWY3DPEHPK3PXP",
+    issuer: "MyApp",
+    label: "bob@example.com",
     counter: 0);
 Check("HOTP output is a valid PNG",
     hotp.Take(8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }));

@@ -202,6 +202,8 @@ public static class OtpQrGenerator
         var composite = new Bitmap(totalW, totalH, PixelFormat.Format32bppArgb);
         using var g = Graphics.FromImage(composite);
         g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.InterpolationMode = InterpolationMode.NearestNeighbor;
+        g.PixelOffsetMode = PixelOffsetMode.Half;
         g.Clear(Color.White);
 
         for (int i = 0; i < tiles.Count; i++)
@@ -211,10 +213,10 @@ public static class OtpQrGenerator
             int cellX = gap + (c * (cellW + gap));
             int cellY = gap + (r * (cellH + gap));
 
-            // Center the QR within its cell (tiles can differ in size if payloads differ).
-            int qrX = cellX + ((cellW - tiles[i].Width) / 2);
-            int qrY = cellY + ((cellH - tiles[i].Height) / 2);
-            g.DrawImage(tiles[i], qrX, qrY, tiles[i].Width, tiles[i].Height);
+            // Scale every QR to the same cell size so all four codes render equally large,
+            // regardless of how many modules each payload needs. NearestNeighbor keeps the
+            // module edges sharp (no blurring), preserving scannability.
+            g.DrawImage(tiles[i], new Rectangle(cellX, cellY, cellW, cellH));
         }
 
         return composite;
