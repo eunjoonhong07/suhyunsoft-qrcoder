@@ -1,12 +1,10 @@
 # QRCoder
 
 [![License](https://img.shields.io/github/license/Shane32/QRCoder)](LICENSE.txt)
-[![NuGet](https://img.shields.io/nuget/v/QRCoder)](https://www.nuget.org/packages/QRCoder/)
-[![Nuget](https://img.shields.io/nuget/dt/QRCoder)](https://www.nuget.org/packages/QRCoder)
-[![Coverage](https://codecov.io/gh/Shane32/QRCoder/branch/master/graph/badge.svg?token=3yNs88KD8S)](https://codecov.io/gh/Shane32/QRCoder)
-[![GitHub contributors](https://img.shields.io/github/contributors/Shane32/QRCoder)](https://github.com/Shane32/QRCoder/graphs/contributors)
 
 QRCoder is a simple C# library originally created by [Raffael Herrmann](https://raffaelherrmann.de) for generating QR codes and Micro QR codes.
+
+> **Note:** This repository is a trimmed, customized build of QRCoder. The solution contains just two projects — the **QRCoder** class library (single-target **.NET 8.0**, producing one reusable `QRCoder.dll`) and **QRCoderSamples**, a sample console app that demonstrates the library (including a custom one-time-password QR generator). The upstream project targets many more frameworks and ships additional packages; the wiki links below point to that upstream documentation.
 
 - 📚 [Documentation & Wiki](https://github.com/Shane32/QRCoder/wiki)
 - 📋 [Release notes / Changelog](https://github.com/Shane32/QRCoder/releases)
@@ -14,20 +12,47 @@ QRCoder is a simple C# library originally created by [Raffael Herrmann](https://
 
 ## ✨ Features
 
-- 🚀 **Zero dependencies** - No external libraries required (framework dependencies only)
+- 🪶 **Minimal dependencies** - Only `System.Drawing.Common` (used by the bitmap-based renderers)
 - ⚡ **Fast performance** - Optimized QR code generation with low memory footprint
 - 🎨 **Multiple output formats** - PNG, SVG, PDF, ASCII, Bitmap, PostScript, and more
 - 📱 **23+ payload generators** - WiFi, vCard, URLs, payments, and many more
 - 🔧 **Highly configurable** - Error correction levels, custom colors, logos, and styling
-- 🌐 **Cross-platform** - Supports .NET 5+, .NET Framework 3.5+, .NET Core 1.0+, and .NET Standard 1.3+
+- 🌐 **Modern .NET** - Targets **.NET 8.0**; consumable by any .NET 8+ application
 - 📦 **Micro QR codes** - Smaller QR codes for space-constrained applications
 
-## 📦 Installation
+## 📦 Building from source
 
-Install via NuGet Package Manager:
+This fork isn't published to NuGet — you build the DLL directly from source. Requires the .NET SDK (8.0 or newer).
 
 ```bash
-PM> Install-Package QRCoder
+# Build the single reusable library DLL:
+dotnet build QRCoder/QRCoder.csproj -c Release
+#   -> QRCoder/bin/Release/net8.0/QRCoder.dll
+
+# Build and run the sample application:
+dotnet run --project QRCoderSamples -c Release
+```
+
+To use the DLL in your own project, add a project reference to `QRCoder/QRCoder.csproj`, or reference the compiled `QRCoder.dll` directly.
+
+## 🗂️ Repository structure
+
+The solution (`QRCoder.sln`) contains exactly two projects:
+
+| Project | Type | Output | Description |
+|---------|------|--------|-------------|
+| **QRCoder** | Class library (`net8.0`) | `QRCoder.dll` | The reusable QR-code library. |
+| **QRCoderSamples** | Console app (`net10.0-windows`) | `QRCoderSamples.exe` | Sample app that references the DLL and demonstrates its use. |
+
+Inside `QRCoder/`, the source is organized by concern:
+
+```
+QRCoder/
+├── QRCodeData.cs            # core module-matrix data model
+├── Rendering/               # all output renderers (PNG, SVG, PDF, BMP, ASCII, ...)
+├── QRCodeGenerator/         # QR encoding engine (partial class + fragments)
+├── PayloadGenerator/        # payload builders (WiFi, URL, OneTimePassword, ...)
+└── Attributes/  Exceptions/  Extensions/
 ```
 
 ## 🚀 Quick Start
@@ -116,17 +141,38 @@ QRCoder provides multiple renderers for different output formats and use cases. 
 | [**BitmapByteQRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#24-bitmapbyteqrcode-renderer-in-detail) | BMP byte array | — | `new BitmapByteQRCode(data).GetGraphic(20)` |
 | [**PdfByteQRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#210-pdfbyteqrcode-renderer-in-detail) | PDF byte array | — | `new PdfByteQRCode(data).GetGraphic(20)` |
 | [**PostscriptQRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#29-postscriptqrcode-renderer-in-detail) | PostScript/EPS string | — | `new PostscriptQRCode(data).GetGraphic(20)` |
-| [**XamlQRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#28-xamlqrcode-renderer-in-detail) | XAML DrawingImage | XAML² | `new XamlQRCode(data).GetGraphic(20)` |
-| [**UnityQRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#27-unityqrcode-renderer-in-detail) | Unity Texture2D | Unity³ | `new UnityQRCode(data).GetGraphic(20)` |
 
 **Notes:**
-- ¹ Requires Windows or System.Drawing.Common package (uses GDI+)
-- ² Requires the [QRCoder.Xaml](https://www.nuget.org/packages/QRCoder.Xaml) package
-- ³ Requires the [QRCoder.Unity](https://www.nuget.org/packages/QRCoder.Unity) package
+- ¹ Requires Windows or the `System.Drawing.Common` package (uses GDI+)
 
-**Framework Compatibility:** Not all renderers are available on all target frameworks. Check the [compatibility table](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#2-overview-of-the-different-renderers) for details.
+> The upstream `XamlQRCode` and `UnityQRCode` renderers are **not** included in this fork — the `QRCoder.Xaml` project was removed. Use the cross-platform renderers above.
 
 For comprehensive information about renderers, see: [Wiki: Advanced usage - QR Code renderers](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers)
+
+## 🧪 Sample application (QRCoderSamples)
+
+`QRCoderSamples` is a console app that demonstrates the library. It includes `OtpQrGenerator`, a helper built on QRCoder's `PayloadGenerator.OneTimePassword` that produces two-factor-authentication (TOTP/HOTP) QR codes:
+
+```csharp
+using QRCoderSamples;
+
+// A TOTP QR code (scannable by Google Authenticator, Authy, etc.), as PNG bytes:
+byte[] png = OtpQrGenerator.CreateTotpQr("JBSWY3DPEHPK3PXP", "MyApp", "alice@example.com");
+File.WriteAllBytes("otp.png", png);
+
+// Choose a different image format — PNG, SVG, BMP, PDF, or JPEG:
+byte[] svg = OtpQrGenerator.CreateTotpQr("JBSWY3DPEHPK3PXP", "MyApp", "alice@example.com",
+                                         format: QrImageFormat.Svg);
+
+// Combine up to four accounts into ONE 2x2 grid image (PNG/JPEG/BMP):
+byte[] grid = OtpQrGenerator.CreateTotpGrid(new (string, string, string)[]
+{
+    ("JBSWY3DPEHPK3PXP", "MyApp", "alice@example.com"),
+    ("KRSXG5CTMVRXEZLU", "MyApp", "bob@example.com"),
+});
+```
+
+Running the sample (`dotnet run --project QRCoderSamples -c Release`) writes example QR files — single codes in every format plus the 2x2 grids — to the app's output folder, and self-checks that each output is a valid image. Note that the OTP helper and the grid/JPEG output use `System.Drawing`, so the sample targets `net10.0-windows`.
 
 ## 🔧 Advanced Features
 
@@ -210,12 +256,6 @@ Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 ```
 
 Note that the `RussiaPaymentOrder` payload generator already includes this registration internally, so no additional setup is required when using that class.
-
-## 🚀 CI Builds
-
-The NuGet feed contains only **major/stable** releases. If you want the latest functions and features, you can use the CI builds [via Github packages](https://github.com/Shane32/qrcoder/packages).
-
-_(More information on how to use Github Packages in Nuget Package Manager can be [found here](https://samlearnsazure.blog/2021/08/08/consuming-a-nuget-package-from-github-packages/).)_
 
 ## 🤝 Contributing
 
