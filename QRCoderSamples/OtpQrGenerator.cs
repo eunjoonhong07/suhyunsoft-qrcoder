@@ -212,11 +212,6 @@ public static class OtpQrGenerator
             int c = i % cols;
             int cellX = gap + (c * (cellW + gap));
             int cellY = gap + (r * (cellH + gap));
-
-            // Scale every QR to the same cell size so all four codes render equally large,
-            // regardless of how many modules each payload needs. NearestNeighbor keeps the
-            // module edges sharp (no blurring), preserving scannability.
-            g.DrawImage(tiles[i], new Rectangle(cellX, cellY, cellW, cellH));
         }
 
         return composite;
