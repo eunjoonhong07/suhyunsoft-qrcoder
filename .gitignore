@@ -226,3 +226,5 @@ QRCoderTests/*.received.*
 
 # Benchmarks
 BenchmarkDotNet.Artifacts/
+
+/PROJECT_SCOPE.md
