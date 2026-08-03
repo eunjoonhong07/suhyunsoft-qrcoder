@@ -190,38 +190,4 @@ public class QRCode : AbstractQRCode, IDisposable
     }
 }
 
-/// <summary>
-/// Provides static methods for creating bitmap QR codes.
-/// </summary>
-#if NET6_0_OR_GREATER
-[System.Runtime.Versioning.SupportedOSPlatform("windows")]
-#endif
-public static class QRCodeHelper
-{
-    /// <summary>
-    /// Creates a bitmap QR code with a single function call.
-    /// </summary>
-    /// <param name="plainText">The text or payload to be encoded inside the QR code.</param>
-    /// <param name="pixelsPerModule">The number of pixels each dark/light module of the QR code will occupy in the final QR code image.</param>
-    /// <param name="darkColor">The color of the dark modules.</param>
-    /// <param name="lightColor">The color of the light modules.</param>
-    /// <param name="eccLevel">The level of error correction data.</param>
-    /// <param name="forceUtf8">Specifies whether the generator should be forced to work in UTF-8 mode.</param>
-    /// <param name="utf8BOM">Specifies whether the byte-order-mark should be used.</param>
-    /// <param name="eciMode">Specifies which ECI mode should be used.</param>
-    /// <param name="requestedVersion">Sets the fixed QR code target version.</param>
-    /// <param name="icon">An optional icon to be placed in the center of the QR code.</param>
-    /// <param name="iconSizePercent">The size of the icon as a percentage of the QR code size.</param>
-    /// <param name="iconBorderWidth">The width of the border around the icon.</param>
-    /// <param name="drawQuietZones">Indicates if quiet zones around the QR code should be drawn.</param>
-    /// <returns>Returns the QR code graphic as a bitmap.</returns>
-    public static Bitmap GetQRCode(string plainText, int pixelsPerModule, Color darkColor, Color lightColor, ECCLevel eccLevel, bool forceUtf8 = false, bool utf8BOM = false, EciMode eciMode = EciMode.Default, int requestedVersion = -1, Bitmap? icon = null, int iconSizePercent = 15, int iconBorderWidth = 0, bool drawQuietZones = true)
-    {
-        using var qrGenerator = new QRCodeGenerator();
-        using var qrCodeData = qrGenerator.CreateQrCode(plainText, eccLevel, forceUtf8, utf8BOM, eciMode, requestedVersion);
-        using var qrCode = new QRCode(qrCodeData);
-        return qrCode.GetGraphic(pixelsPerModule, darkColor, lightColor, icon, iconSizePercent, iconBorderWidth, drawQuietZones);
-    }
-}
-
 #endif

@@ -14,8 +14,8 @@ QRCoder is a simple C# library originally created by [Raffael Herrmann](https://
 
 - 🪶 **Minimal dependencies** - Only `System.Drawing.Common` (used by the bitmap-based renderers)
 - ⚡ **Fast performance** - Optimized QR code generation with low memory footprint
-- 🎨 **Multiple output formats** - PNG, SVG, PDF, ASCII, Bitmap, PostScript, and more
-- 📱 **23+ payload generators** - WiFi, vCard, URLs, payments, and many more
+- 🎨 **Multiple output formats** - PNG, SVG, PDF, BMP (+ JPEG via the sample) 
+- 📱 **OneTimePassword** - One-Time-Password (TOTP/HOTP) payload generator.
 - 🔧 **Highly configurable** - Error correction levels, custom colors, logos, and styling
 - 🌐 **Modern .NET** - Targets **.NET 8.0**; consumable by any .NET 8+ application
 - 📦 **Micro QR codes** - Smaller QR codes for space-constrained applications
@@ -49,21 +49,21 @@ Inside `QRCoder/`, the source is organized by concern:
 ```
 QRCoder/
 ├── QRCodeData.cs            # core module-matrix data model
-├── Rendering/               # all output renderers (PNG, SVG, PDF, BMP, ASCII, ...)
+├── Rendering/               # all output renderers (PNG, SVG, PDF, BMP)
 ├── QRCodeGenerator/         # QR encoding engine (partial class + fragments)
-├── PayloadGenerator/        # payload builders (WiFi, URL, OneTimePassword, ...)
+├── PayloadGenerator/        # payload builders (OneTimePassword)
 └── Attributes/  Exceptions/  Extensions/
 ```
 
 ## 🚀 Quick Start
 
-Generate a QR code with just a few lines of code, either using a renderer's static helper method, or by creating a QR code first and then passing it to a renderer:
+Generate a QR code with just a few lines of code by creating a QR code first and then passing it to a renderer:
 
 ```csharp
 using QRCoder;
 
 // Generate a simple black and white PNG QR code
-byte[] qrCodeImage = PngByteQRCodeHelper.GetQRCode("Hello World", QRCodeGenerator.ECCLevel.Q, 20);
+byte[] qrCodeImage = new PngByteCode(QRCodeGenerator.GenerateQrCode("Hello World", QRCodeGenerator.ECCLevel.Q)).GetGraphic(20);
 
 // Generate a scalable black and white SVG QR code
 using var qrCodeData = QRCodeGenerator.GenerateQrCode("Hello World", QRCodeGenerator.ECCLevel.Q);
@@ -73,25 +73,27 @@ string svg = svgRenderer.GetGraphic();
 
 For more examples and detailed usage instructions, see: [Wiki: How to use QRCoder](https://github.com/Shane32/QRCoder/wiki/How-to-use-QRCoder)
 
-## 📱 Payload Generators
+## 📱 Payload Generator
 
-QR codes can encode structured data that triggers specific actions when scanned (e.g., WiFi credentials, contact information, URLs). QRCoder includes payload generators that create properly formatted strings for these common use cases.
+This build uses a single payload generator, "OneTimePassword", which produces the 'otpauth://' string that authenticator apps read. It supports both TOTP and HOTP codes.
 
 ### Usage Example
 
 ```csharp
 using QRCoder;
 
-// Create a bookmark payload
-var bookmarkPayload = new PayloadGenerator.Bookmark("https://github.com/Shane32/QRCoder", "QRCoder Repository");
+// Build a One-Time-Password (TOTP) payload
+var otpPayload = new PayloadGenerator.OneTimePassword
+{
+    Secret = "JBSWY3DPEHPK3PXP",
+    Issuer = "MyApp",
+    Label = "alice@example.com",
+};
 
 // Generate the QR code data from the payload
-using var qrCodeData = QRCodeGenerator.GenerateQrCode(bookmarkPayload);
+using var qrCodeData = QRCodeGenerator.GenerateQrCode(otpPayload);
 
-// Or override the ECC level
-using var qrCodeData2 = QRCodeGenerator.GenerateQrCode(bookmarkPayload, QRCodeGenerator.ECCLevel.H);
-
-// Render the QR code
+// Render the QR code to a PNG
 using var pngRenderer = new PngByteQRCode(qrCodeData);
 byte[] qrCodeImage = pngRenderer.GetGraphic(20);
 ```
@@ -100,52 +102,7 @@ byte[] qrCodeImage = pngRenderer.GetGraphic(20);
 
 | Payload Type | Usage Example | Description |
 |--------------|---------------|-------------|
-| [**WiFi**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#321-wifi) | `new PayloadGenerator.WiFi(ssid, password, auth)` | WiFi network credentials |
-| [**URL**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#319-url) | `new PayloadGenerator.Url("https://example.com")` | Website URL |
-| [**Bookmark**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#33-bookmark) | `new PayloadGenerator.Bookmark(url, title)` | Browser bookmark |
-| [**Mail**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#38-mail) | `new PayloadGenerator.Mail(email, subject, body)` | Email with pre-filled fields |
-| [**SMS**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#317-sms) | `new PayloadGenerator.SMS(number, message)` | SMS message |
-| [**MMS**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#39-mms) | `new PayloadGenerator.MMS(number, subject)` | MMS message |
-| [**Geolocation**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#36-geolocation) | `new PayloadGenerator.Geolocation(lat, lng)` | GPS coordinates |
-| [**PhoneNumber**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#312-phonenumber) | `new PayloadGenerator.PhoneNumber(number)` | Phone number for calling |
-| [**SkypeCall**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#315-skype-call) | `new PayloadGenerator.SkypeCall(username)` | Skype call |
-| [**WhatsAppMessage**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#320-whatsappmessage) | `new PayloadGenerator.WhatsAppMessage(number, msg)` | WhatsApp message |
-| [**ContactData**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#35-contactdata-mecardvcard) | `new PayloadGenerator.ContactData(...)` | vCard/MeCard contact |
-| [**CalendarEvent**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#34-calendar-events-icalvevent) | `new PayloadGenerator.CalendarEvent(...)` | iCal/vEvent |
 | [**OneTimePassword**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#311-one-time-password) | `new PayloadGenerator.OneTimePassword(...)` | TOTP/HOTP for 2FA |
-| [**BitcoinAddress**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#32-bitcoin-like-crypto-currency-payment-address) | `new PayloadGenerator.BitcoinAddress(address)` | Bitcoin payment |
-| [**BitcoinCashAddress**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#32-bitcoin-like-crypto-currency-payment-address) | `new PayloadGenerator.BitcoinCashAddress(address)` | Bitcoin Cash payment |
-| [**LitecoinAddress**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#32-bitcoin-like-crypto-currency-payment-address) | `new PayloadGenerator.LitecoinAddress(address)` | Litecoin payment |
-| [**MoneroTransaction**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#310-monero-addresspayment) | `new PayloadGenerator.MoneroTransaction(...)` | Monero payment |
-| [**SwissQrCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#318-swissqrcode-iso-20022) | `new PayloadGenerator.SwissQrCode(...)` | Swiss QR bill (ISO-20022) |
-| [**Girocode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#37-girocode) | `new PayloadGenerator.Girocode(...)` | SEPA payment (EPC QR) |
-| [**BezahlCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#31-bezahlcode) | `new PayloadGenerator.BezahlCode(...)` | German payment code |
-| [**RussiaPaymentOrder**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#313-russiapaymentorder) | `new PayloadGenerator.RussiaPaymentOrder(...)` | Russian payment (ГОСТ Р 56042-2014) |
-| [**SlovenianUpnQr**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#316-slovenianupnqr) | `new PayloadGenerator.SlovenianUpnQr(...)` | Slovenian UPN payment |
-| [**ShadowSocksConfig**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators#314-shadowsocks-configuration) | `new PayloadGenerator.ShadowSocksConfig(...)` | Shadowsocks proxy config |
-
-For detailed information about payload generators, see: [Wiki: Advanced usage - Payload generators](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---Payload-generators)
-
-## 🎨 QR Code Renderers
-
-QRCoder provides multiple renderers for different output formats and use cases. Each renderer has specific capabilities and framework requirements.
-
-| Renderer | Output Format | Requires | Usage Example |
-|----------|---------------|----------|---------------|
-| [**PngByteQRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#25-pngbyteqrcode-renderer-in-detail) | PNG byte array | — | `new PngByteQRCode(data).GetGraphic(20)` |
-| [**SvgQRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#26-svgqrcode-renderer-in-detail) | SVG string | — | `new SvgQRCode(data).GetGraphic(20)` |
-| [**QRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#21-qrcode-renderer-in-detail) | System.Drawing.Bitmap | Windows¹ | `new QRCode(data).GetGraphic(20)` |
-| [**ArtQRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#211-artqrcode-renderer-in-detail) | Artistic bitmap with custom images | Windows¹ | `new ArtQRCode(data).GetGraphic(20)` |
-| [**AsciiQRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#22-asciiqrcode-renderer-in-detail) | ASCII art string | — | `new AsciiQRCode(data).GetGraphic(1)` or `new AsciiQRCode(data).GetGraphicSmall()` |
-| [**Base64QRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#23-base64qrcode-renderer-in-detail) | Base64 encoded image | — | `new Base64QRCode(data).GetGraphic(20)` |
-| [**BitmapByteQRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#24-bitmapbyteqrcode-renderer-in-detail) | BMP byte array | — | `new BitmapByteQRCode(data).GetGraphic(20)` |
-| [**PdfByteQRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#210-pdfbyteqrcode-renderer-in-detail) | PDF byte array | — | `new PdfByteQRCode(data).GetGraphic(20)` |
-| [**PostscriptQRCode**](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers#29-postscriptqrcode-renderer-in-detail) | PostScript/EPS string | — | `new PostscriptQRCode(data).GetGraphic(20)` |
-
-**Notes:**
-- ¹ Requires Windows or the `System.Drawing.Common` package (uses GDI+)
-
-> The upstream `XamlQRCode` and `UnityQRCode` renderers are **not** included in this fork — the `QRCoder.Xaml` project was removed. Use the cross-platform renderers above.
 
 For comprehensive information about renderers, see: [Wiki: Advanced usage - QR Code renderers](https://github.com/Shane32/QRCoder/wiki/Advanced-usage---QR-Code-renderers)
 
@@ -157,18 +114,18 @@ For comprehensive information about renderers, see: [Wiki: Advanced usage - QR C
 using QRCoderSamples;
 
 // A TOTP QR code (scannable by Google Authenticator, Authy, etc.), as PNG bytes:
-byte[] png = OtpQrGenerator.CreateTotpQr("JBSWY3DPEHPK3PXP", "MyApp", "alice@example.com");
+byte[] png = OtpQrGenerator.CreateTotpQr("JBSWY3DPEHPK3PXP", "RealApp", "mary@example.com");
 File.WriteAllBytes("otp.png", png);
 
 // Choose a different image format — PNG, SVG, BMP, PDF, or JPEG:
-byte[] svg = OtpQrGenerator.CreateTotpQr("JBSWY3DPEHPK3PXP", "MyApp", "alice@example.com",
+byte[] svg = OtpQrGenerator.CreateTotpQr("JBSWY3DPEHPK3PXP", "RealApp", "mary@example.com",
                                          format: QrImageFormat.Svg);
 
 // Combine up to four accounts into ONE 2x2 grid image (PNG/JPEG/BMP):
 byte[] grid = OtpQrGenerator.CreateTotpGrid(new (string, string, string)[]
 {
-    ("JBSWY3DPEHPK3PXP", "MyApp", "alice@example.com"),
-    ("KRSXG5CTMVRXEZLU", "MyApp", "bob@example.com"),
+    ("JBSWY3DPEHPK3PXP", "RealApp", "alice@example.com"),
+    ("KRSXG5CTMVRXEZLU", "RealApp", "bob@example.com"),
 });
 ```
 
@@ -224,7 +181,7 @@ for (int y = 0; y < size; y++)
 
 ### System.Drawing.Common Warnings (QRCode and ArtQRCode renderers)
 
-The `QRCode` and `ArtQRCode` renderers depend on `System.Drawing.Common`, which Microsoft has [removed cross-platform support for in .NET 6+](https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/6.0/system-drawing-common-windows-only). You may encounter one of the following build or runtime errors:
+The `QRCode` renderers depend on `System.Drawing.Common`, which Microsoft has [removed cross-platform support for in .NET 6+](https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/6.0/system-drawing-common-windows-only). You may encounter one of the following build or runtime errors:
 
 ```
 CA1416: This call site is reachable on all platforms. 'QRCode.QRCode(QRCodeData)' is only supported on: 'windows'

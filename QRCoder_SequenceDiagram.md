@@ -1,8 +1,9 @@
 # QRCoder — Sequence Flow
 
-Adapted to this program: the sample app (QRCoderSamples) builds a One-Time-Password QR code and
-saves it. Two views — a high-level flow and a call-level flow — matching the actual code path,
-plus the format and grid variants.
+The app (QRCoderSamples) builds a One-Time-Password QR code and saves it. 
+Two views:
+1. A high-level flow and a call-level flow/
+2. An actual matching code path, plus the format and grid variants.
 
 ## 1. General Sequence Flow
 

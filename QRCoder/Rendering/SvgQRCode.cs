@@ -559,34 +559,4 @@ public class SvgQRCode : AbstractQRCode, IDisposable
     }
 }
 
-/// <summary>
-/// Provides static methods for creating SVG QR codes.
-/// </summary>
-public static class SvgQRCodeHelper
-{
-    /// <summary>
-    /// Creates an SVG QR code with a single function call.
-    /// </summary>
-    /// <param name="plainText">The text or payload to be encoded inside the QR code.</param>
-    /// <param name="pixelsPerModule">The pixel size each dark/light module of the QR code will occupy in the final QR code image.</param>
-    /// <param name="darkColorHex">The color of the dark modules in HEX format (e.g., #000000).</param>
-    /// <param name="lightColorHex">The color of the light modules in HEX format (e.g., #ffffff).</param>
-    /// <param name="eccLevel">The level of error correction data.</param>
-    /// <param name="forceUtf8">Specifies whether the generator should be forced to work in UTF-8 mode.</param>
-    /// <param name="utf8BOM">Specifies whether the byte-order-mark should be used.</param>
-    /// <param name="eciMode">Specifies which ECI mode should be used.</param>
-    /// <param name="requestedVersion">Sets the fixed QR code target version.</param>
-    /// <param name="drawQuietZones">Indicates if quiet zones around the QR code should be drawn.</param>
-    /// <param name="sizingMode">Defines whether width/height or viewBox should be used for size definition.</param>
-    /// <param name="logo">An optional logo to be rendered on the code (either Bitmap or SVG).</param>
-    /// <returns>Returns the QR code graphic as an SVG string.</returns>
-    public static string GetQRCode(string plainText, int pixelsPerModule, string darkColorHex, string lightColorHex, ECCLevel eccLevel, bool forceUtf8 = false, bool utf8BOM = false, EciMode eciMode = EciMode.Default, int requestedVersion = -1, bool drawQuietZones = true, SizingMode sizingMode = SizingMode.WidthHeightAttribute, SvgLogo? logo = null)
-    {
-        using var qrGenerator = new QRCodeGenerator();
-        using var qrCodeData = qrGenerator.CreateQrCode(plainText, eccLevel, forceUtf8, utf8BOM, eciMode, requestedVersion);
-        using var qrCode = new SvgQRCode(qrCodeData);
-        return qrCode.GetGraphic(pixelsPerModule, darkColorHex, lightColorHex, drawQuietZones, sizingMode, logo);
-    }
-}
-
 #endif
