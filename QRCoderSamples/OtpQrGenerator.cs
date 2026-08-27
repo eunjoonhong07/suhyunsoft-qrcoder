@@ -212,6 +212,9 @@ public static class OtpQrGenerator
             int c = i % cols;
             int cellX = gap + (c * (cellW + gap));
             int cellY = gap + (r * (cellH + gap));
+
+            int offsetX = cellX + ((cellW - tiles[i].Width) / 2);
+            int offsetY = cellY + ((cellH - tiles[i].Height) / 2);
         }
 
         return composite;
